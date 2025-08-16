@@ -1,0 +1,22 @@
+(cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF'
+diff --git a/vercel.json b/vercel.json
+--- a/vercel.json
++++ b/vercel.json
+@@ -0,0 +1,15 @@
++{
++  "version": 2,
++  "builds": [
++    {
++      "src": "web_app.py",
++      "use": "@vercel/python"
++    }
++  ],
++  "routes": [
++    {
++      "src": "/(.*)",
++      "dest": "web_app.py"
++    }
++  ]
++}
+EOF
+)
