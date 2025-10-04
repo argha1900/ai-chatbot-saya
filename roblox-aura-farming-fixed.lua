@@ -68,20 +68,16 @@ local statusLabel = nil
 local function initializeCharacter()
     print("🔄 Initializing character...")
     
-    if player.Character then
-        character = player.Character
-        humanoid = character:WaitForChild("Humanoid")
-        rootPart = character:WaitForChild("HumanoidRootPart")
-        print("✅ Character loaded successfully!")
-        return true
-    else
-        print("⏳ Waiting for character to spawn...")
-        character = player.CharacterAdded:Wait()
-        humanoid = character:WaitForChild("Humanoid")
-        rootPart = character:WaitForChild("HumanoidRootPart")
-        print("✅ Character spawned successfully!")
-        return true
-    end
+    -- Wait for character to exist
+    repeat
+        wait(0.1)
+    until player.Character
+    
+    character = player.Character
+    humanoid = character:WaitForChild("Humanoid")
+    rootPart = character:WaitForChild("HumanoidRootPart")
+    print("✅ Character loaded successfully!")
+    return true
 end
 
 -- Check if character is ready
@@ -544,39 +540,45 @@ end
 -- EVENT HANDLERS
 -- ========================================
 
--- Auto-reconnect when character respawns
-player.CharacterAdded:Connect(function(newCharacter)
-    print("🔄 Character respawned, reinitializing...")
-    
-    -- Wait for character to be ready
-    wait(1) -- Small delay to ensure character is fully loaded
-    
-    character = newCharacter
-    humanoid = character:WaitForChild("Humanoid")
-    rootPart = character:WaitForChild("HumanoidRootPart")
-    
-    -- Stop any current animation
-    if isAnimating then
-        stopAnimation()
+-- Monitor character changes
+spawn(function()
+    while true do
+        wait(1) -- Check every second
+        
+        if player.Character and player.Character ~= character then
+            print("🔄 Character changed, reinitializing...")
+            
+            -- Stop any current animation
+            if isAnimating then
+                stopAnimation()
+            end
+            
+            -- Update character references
+            character = player.Character
+            if character then
+                humanoid = character:FindFirstChild("Humanoid")
+                rootPart = character:FindFirstChild("HumanoidRootPart")
+                
+                -- Wait for parts to exist
+                if not humanoid then
+                    humanoid = character:WaitForChild("Humanoid")
+                end
+                if not rootPart then
+                    rootPart = character:WaitForChild("HumanoidRootPart")
+                end
+                
+                print("✅ Character reinitialized successfully!")
+            end
+        elseif not player.Character and character then
+            print("⚠️ Character removed, cleaning up...")
+            if isAnimating then
+                stopAnimation()
+            end
+            character = nil
+            humanoid = nil
+            rootPart = nil
+        end
     end
-    
-    -- Recreate UI if needed
-    if not player.PlayerGui:FindFirstChild("AuraFarmingUI") then
-        createUI()
-    end
-    
-    print("✅ Character reinitialized successfully!")
-end)
-
--- Handle character removal
-player.CharacterRemoving:Connect(function()
-    print("⚠️ Character being removed, cleaning up...")
-    if isAnimating then
-        stopAnimation()
-    end
-    character = nil
-    humanoid = nil
-    rootPart = nil
 end)
 
 -- ========================================
