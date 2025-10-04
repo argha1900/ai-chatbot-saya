@@ -14,9 +14,9 @@ local SoundService = game:GetService("SoundService")
 
 -- Variables
 local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
-local rootPart = character:WaitForChild("HumanoidRootPart")
+local character = nil
+local humanoid = nil
+local rootPart = nil
 
 -- Animation IDs (ganti dengan ID animasi yang valid)
 local ANIMATION_IDS = {
@@ -234,6 +234,17 @@ end
 
 -- Play Animation Function
 function playAnimation(animationName)
+    -- Check if character exists
+    if not character or not character.Parent then
+        print("❌ Character not found! Please wait for character to load.")
+        return
+    end
+    
+    if not humanoid then
+        print("❌ Humanoid not found! Please wait for character to load.")
+        return
+    end
+    
     if isAnimating then
         stopAnimation()
     end
@@ -302,6 +313,10 @@ end
 
 -- Play Sound Effect
 function playSoundEffect(animationName)
+    if not character or not character.Parent then
+        return
+    end
+    
     local soundId = SOUND_IDS.AURA_SOUND -- Default sound
     
     -- Create sound
@@ -321,6 +336,10 @@ end
 
 -- Create Visual Effects
 function createVisualEffects(animationName)
+    if not character or not character.Parent or not rootPart then
+        return
+    end
+    
     -- Create aura effect
     local aura = Instance.new("Part")
     aura.Name = "AuraEffect"
@@ -373,9 +392,11 @@ end
 
 -- Stop Visual Effects
 function stopVisualEffects()
-    local aura = character:FindFirstChild("AuraEffect")
-    if aura then
-        aura:Destroy()
+    if character and character.Parent then
+        local aura = character:FindFirstChild("AuraEffect")
+        if aura then
+            aura:Destroy()
+        end
     end
 end
 
@@ -399,14 +420,26 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Initialize
-local function initialize()
-    -- Wait for character
-    if not character then
+-- Initialize Character
+local function initializeCharacter()
+    if player.Character then
+        character = player.Character
+        humanoid = character:WaitForChild("Humanoid")
+        rootPart = character:WaitForChild("HumanoidRootPart")
+        print("✅ Character loaded successfully!")
+    else
+        print("⏳ Waiting for character to spawn...")
         character = player.CharacterAdded:Wait()
         humanoid = character:WaitForChild("Humanoid")
         rootPart = character:WaitForChild("HumanoidRootPart")
+        print("✅ Character spawned successfully!")
     end
+end
+
+-- Initialize
+local function initialize()
+    -- Initialize character first
+    initializeCharacter()
     
     -- Create UI
     local screenGui, statusLabel = createUI()
@@ -430,14 +463,33 @@ initialize()
 
 -- Auto-reconnect when character respawns
 player.CharacterAdded:Connect(function(newCharacter)
+    print("🔄 Character respawned, reinitializing...")
     character = newCharacter
     humanoid = character:WaitForChild("Humanoid")
     rootPart = character:WaitForChild("HumanoidRootPart")
+    
+    -- Stop any current animation
+    if isAnimating then
+        stopAnimation()
+    end
     
     -- Recreate UI if needed
     if not player.PlayerGui:FindFirstChild("AuraFarmingUI") then
         initialize()
     end
+    
+    print("✅ Character reinitialized successfully!")
+end)
+
+-- Handle character removal
+player.CharacterRemoving:Connect(function()
+    print("⚠️ Character being removed, cleaning up...")
+    if isAnimating then
+        stopAnimation()
+    end
+    character = nil
+    humanoid = nil
+    rootPart = nil
 end)
 
 -- ========================================
