@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spam Detection System - DalangStore</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            animation: slideDown 1s ease-out;
+        }
+
+        .system-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 3s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+
+        .system-subtitle {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .status-active {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        .status-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .status-danger {
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+            color: white;
+            animation: shake 0.5s ease-in-out infinite;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .dashboard-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .metric-label {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .login-form {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            margin-bottom: 30px;
+            animation: slideUp 1s ease-out 0.5s both;
+        }
+
+        .form-title {
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 30px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .login-button {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .login-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .login-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .spam-alert {
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            text-align: center;
+            animation: shake 0.5s ease-in-out infinite;
+            display: none;
+        }
+
+        .spam-alert.show {
+            display: block;
+        }
+
+        .spam-info {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .ip-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+
+        .blocked-ips {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            animation: slideUp 1s ease-out 1s both;
+        }
+
+        .blocked-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .ip-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .ip-item {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.3s ease;
+        }
+
+        .ip-item:hover {
+            transform: translateX(10px);
+        }
+
+        .ip-address {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .ip-time {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .unblock-button {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: transform 0.3s ease;
+        }
+
+        .unblock-button:hover {
+            transform: scale(1.05);
+        }
+
+        .log-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            margin-top: 30px;
+            animation: slideUp 1s ease-out 1.5s both;
+        }
+
+        .log-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .log-entry {
+            background: #f8f9fa;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .log-timestamp {
+            color: #666;
+            font-weight: bold;
+        }
+
+        .log-message {
+            color: #333;
+        }
+
+        .log-error {
+            border-left-color: #ff416c;
+            background: #ffe6e6;
+        }
+
+        .log-warning {
+            border-left-color: #ffa726;
+            background: #fff3e0;
+        }
+
+        .log-success {
+            border-left-color: #4caf50;
+            background: #e8f5e8;
+        }
+
+        /* Animations */
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes shake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            25% {
+                transform: translateX(-5px);
+            }
+            75% {
+                transform: translateX(5px);
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .system-title {
+                font-size: 2rem;
+            }
+            
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .login-form {
+                padding: 20px;
+            }
+            
+            .form-title {
+                font-size: 1.5rem;
+            }
+        }
+
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <div class="header">
+            <h1 class="system-title">🛡️ SPAM DETECTION SYSTEM</h1>
+            <p class="system-subtitle">DalangStore Server Protection</p>
+            
+            <div class="status-indicator status-active" id="systemStatus">
+                🟢 SYSTEM AKTIF - MONITORING SPAM
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div class="dashboard">
+            <div class="dashboard-card">
+                <div class="card-title">📊 Total Login Attempts</div>
+                <div class="metric-value" id="totalAttempts">0</div>
+                <div class="metric-label">Attempts Today</div>
+            </div>
+            
+            <div class="dashboard-card">
+                <div class="card-title">🚫 Blocked IPs</div>
+                <div class="metric-value" id="blockedCount">0</div>
+                <div class="metric-label">Currently Blocked</div>
+            </div>
+            
+            <div class="dashboard-card">
+                <div class="card-title">⚠️ Spam Detected</div>
+                <div class="metric-value" id="spamCount">0</div>
+                <div class="metric-label">Spam Attempts</div>
+            </div>
+            
+            <div class="dashboard-card">
+                <div class="card-title">🕒 Last Activity</div>
+                <div class="metric-value" id="lastActivity">--:--</div>
+                <div class="metric-label">Time</div>
+            </div>
+        </div>
+
+        <!-- Spam Alert -->
+        <div class="spam-alert" id="spamAlert">
+            <div class="spam-info">🚨 SPAM DETECTED! 🚨</div>
+            <div>IP Address yang melakukan spam:</div>
+            <div class="ip-display" id="spamIP">Loading...</div>
+            <div>IP ini telah diblokir otomatis!</div>
+        </div>
+
+        <!-- Login Form -->
+        <div class="login-form">
+            <h2 class="form-title">🔐 Login Form</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label" for="username">Username:</label>
+                    <input type="text" id="username" class="form-input" placeholder="Masukkan username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="password">Password:</label>
+                    <input type="password" id="password" class="form-input" placeholder="Masukkan password" required>
+                </div>
+                
+                <button type="submit" class="login-button" id="loginBtn">
+                    🚀 LOGIN KE SERVER
+                </button>
+            </form>
+        </div>
+
+        <!-- Blocked IPs Section -->
+        <div class="blocked-ips">
+            <h3 class="blocked-title">🚫 Daftar IP yang Diblokir</h3>
+            <ul class="ip-list" id="blockedIPList">
+                <!-- Blocked IPs will be displayed here -->
+            </ul>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="log-section">
+            <h3 class="log-title">📋 Activity Log</h3>
+            <div id="activityLog">
+                <!-- Activity logs will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let loginAttempts = [];
+        let blockedIPs = new Set();
+        let spamCount = 0;
+        let totalAttempts = 0;
+        let spamThreshold = 5; // Maximum attempts per minute
+        let timeWindow = 60000; // 1 minute in milliseconds
+
+        // Initialize the system
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSystem();
+            startMonitoring();
+            loadStoredData();
+        });
+
+        // Initialize system
+        function initializeSystem() {
+            updateDashboard();
+            addLogEntry('System initialized successfully', 'success');
+            console.log('🛡️ Spam Detection System initialized');
+        }
+
+        // Start monitoring
+        function startMonitoring() {
+            // Monitor for rapid login attempts
+            setInterval(checkForSpam, 1000);
+            
+            // Update dashboard every 5 seconds
+            setInterval(updateDashboard, 5000);
+            
+            // Clean old attempts every minute
+            setInterval(cleanOldAttempts, 60000);
+        }
+
+        // Get user's IP address (simulated)
+        function getUserIP() {
+            // In a real implementation, you would get this from your server
+            // For demo purposes, we'll simulate different IPs
+            const ips = [
+                '192.168.1.100',
+                '10.0.0.50',
+                '172.16.0.25',
+                '203.142.15.75',
+                '45.123.67.89',
+                '198.51.100.42',
+                '203.0.113.15',
+                '192.0.2.1'
+            ];
+            
+            // Simulate different IPs based on time
+            const index = Math.floor(Date.now() / 10000) % ips.length;
+            return ips[index];
+        }
+
+        // Add login attempt
+        function addLoginAttempt(ip, username) {
+            const attempt = {
+                ip: ip,
+                username: username,
+                timestamp: Date.now(),
+                success: false
+            };
+            
+            loginAttempts.push(attempt);
+            totalAttempts++;
+            
+            addLogEntry(`Login attempt from ${ip} (${username})`, 'warning');
+            updateDashboard();
+        }
+
+        // Check for spam
+        function checkForSpam() {
+            const now = Date.now();
+            const recentAttempts = loginAttempts.filter(attempt => 
+                now - attempt.timestamp < timeWindow
+            );
+            
+            // Group by IP
+            const attemptsByIP = {};
+            recentAttempts.forEach(attempt => {
+                if (!attemptsByIP[attempt.ip]) {
+                    attemptsByIP[attempt.ip] = [];
+                }
+                attemptsByIP[attempt.ip].push(attempt);
+            });
+            
+            // Check each IP for spam
+            Object.keys(attemptsByIP).forEach(ip => {
+                if (attemptsByIP[ip].length >= spamThreshold) {
+                    handleSpamDetection(ip, attemptsByIP[ip]);
+                }
+            });
+        }
+
+        // Handle spam detection
+        function handleSpamDetection(ip, attempts) {
+            if (!blockedIPs.has(ip)) {
+                blockedIPs.add(ip);
+                spamCount++;
+                
+                // Show spam alert
+                showSpamAlert(ip);
+                
+                // Add to blocked list
+                addBlockedIP(ip);
+                
+                // Log the event
+                addLogEntry(`🚨 SPAM DETECTED from ${ip} (${attempts.length} attempts in 1 minute)`, 'error');
+                
+                // Update dashboard
+                updateDashboard();
+                
+                console.log(`🚨 Spam detected from IP: ${ip}`);
+            }
+        }
+
+        // Show spam alert
+        function showSpamAlert(ip) {
+            const alert = document.getElementById('spamAlert');
+            const ipDisplay = document.getElementById('spamIP');
+            
+            ipDisplay.textContent = ip;
+            alert.classList.add('show');
+            
+            // Hide alert after 10 seconds
+            setTimeout(() => {
+                alert.classList.remove('show');
+            }, 10000);
+        }
+
+        // Add blocked IP to list
+        function addBlockedIP(ip) {
+            const list = document.getElementById('blockedIPList');
+            const item = document.createElement('li');
+            item.className = 'ip-item';
+            item.innerHTML = `
+                <div>
+                    <div class="ip-address">${ip}</div>
+                    <div class="ip-time">Blocked: ${new Date().toLocaleString()}</div>
+                </div>
+                <button class="unblock-button" onclick="unblockIP('${ip}')">Unblock</button>
+            `;
+            list.appendChild(item);
+        }
+
+        // Unblock IP
+        function unblockIP(ip) {
+            blockedIPs.delete(ip);
+            spamCount = Math.max(0, spamCount - 1);
+            
+            // Remove from UI
+            const items = document.querySelectorAll('.ip-item');
+            items.forEach(item => {
+                if (item.querySelector('.ip-address').textContent === ip) {
+                    item.remove();
+                }
+            });
+            
+            addLogEntry(`IP ${ip} has been unblocked`, 'success');
+            updateDashboard();
+        }
+
+        // Clean old attempts
+        function cleanOldAttempts() {
+            const now = Date.now();
+            loginAttempts = loginAttempts.filter(attempt => 
+                now - attempt.timestamp < timeWindow * 2
+            );
+        }
+
+        // Update dashboard
+        function updateDashboard() {
+            document.getElementById('totalAttempts').textContent = totalAttempts;
+            document.getElementById('blockedCount').textContent = blockedIPs.size;
+            document.getElementById('spamCount').textContent = spamCount;
+            document.getElementById('lastActivity').textContent = new Date().toLocaleTimeString();
+        }
+
+        // Add log entry
+        function addLogEntry(message, type = 'info') {
+            const log = document.getElementById('activityLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.innerHTML = `
+                <span class="log-timestamp">[${new Date().toLocaleString()}]</span>
+                <span class="log-message">${message}</span>
+            `;
+            
+            // Add to top of log
+            log.insertBefore(entry, log.firstChild);
+            
+            // Keep only last 50 entries
+            const entries = log.querySelectorAll('.log-entry');
+            if (entries.length > 50) {
+                entries[entries.length - 1].remove();
+            }
+        }
+
+        // Load stored data
+        function loadStoredData() {
+            // Load from localStorage if available
+            const stored = localStorage.getItem('spamDetectionData');
+            if (stored) {
+                const data = JSON.parse(stored);
+                blockedIPs = new Set(data.blockedIPs || []);
+                spamCount = data.spamCount || 0;
+                totalAttempts = data.totalAttempts || 0;
+                
+                // Rebuild blocked IP list
+                blockedIPs.forEach(ip => addBlockedIP(ip));
+                updateDashboard();
+            }
+        }
+
+        // Save data
+        function saveData() {
+            const data = {
+                blockedIPs: Array.from(blockedIPs),
+                spamCount: spamCount,
+                totalAttempts: totalAttempts,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('spamDetectionData', JSON.stringify(data));
+        }
+
+        // Handle login form submission
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const userIP = getUserIP();
+            
+            // Check if IP is blocked
+            if (blockedIPs.has(userIP)) {
+                addLogEntry(`Blocked IP ${userIP} attempted to login`, 'error');
+                alert('🚫 IP Anda telah diblokir karena terdeteksi spam!');
+                return;
+            }
+            
+            // Add login attempt
+            addLoginAttempt(userIP, username);
+            
+            // Simulate login process
+            const loginBtn = document.getElementById('loginBtn');
+            loginBtn.disabled = true;
+            loginBtn.textContent = '⏳ Processing...';
+            
+            setTimeout(() => {
+                // Simulate successful login
+                addLogEntry(`Successful login from ${userIP} (${username})`, 'success');
+                alert('✅ Login berhasil! Selamat datang di DalangStore Server!');
+                
+                // Reset form
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+                loginBtn.disabled = false;
+                loginBtn.textContent = '🚀 LOGIN KE SERVER';
+                
+                // Save data
+                saveData();
+            }, 2000);
+        });
+
+        // Auto-save data every 30 seconds
+        setInterval(saveData, 30000);
+
+        // Add scroll animations
+        function animateOnScroll() {
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach(element => {
+                const elementTop = element.getBoundingClientRect().top;
+                const elementVisible = 150;
+                
+                if (elementTop < window.innerHeight - elementVisible) {
+                    element.classList.add('visible');
+                }
+            });
+        }
+
+        window.addEventListener('scroll', animateOnScroll);
+
+        // Initialize animations
+        animateOnScroll();
+
+        // Add click effects
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('unblock-button')) {
+                e.target.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    e.target.style.transform = '';
+                }, 150);
+            }
+        });
+
+        // Console welcome message
+        console.log(`
+🛡️ SPAM DETECTION SYSTEM INITIALIZED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 System Status: ACTIVE
+🔒 Protection Level: HIGH
+⏰ Monitoring: 24/7
+🌐 Target: https://dalangstore.servercloud.my.id/server
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        `);
+    </script>
+</body>
+</html>
