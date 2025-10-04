@@ -1,8 +1,8 @@
 -- ========================================
--- ROBLOX STUDIO LITE - AURA FARMING SCRIPT (ULTRA SAFE)
+-- ROBLOX STUDIO LITE - AURA FARMING SCRIPT (PLAYERGUI SAFE)
 -- ========================================
 -- Script untuk animasi aura farming dan fitur-fitur lainnya
--- Compatible dengan Roblox Studio Lite - ULTRA SAFE VERSION!
+-- Compatible dengan Roblox Studio Lite - PLAYERGUI SAFE VERSION!
 
 -- Services
 local Players = game:GetService("Players")
@@ -98,40 +98,47 @@ local function isCharacterReady()
 end
 
 -- ========================================
--- UI CREATION FUNCTIONS
+-- ULTRA SAFE UI FUNCTIONS
 -- ========================================
 
--- Create UI
+-- Wait for PlayerGui safely
+local function waitForPlayerGui()
+    local attempts = 0
+    while not player.PlayerGui and attempts < 100 do
+        wait(0.1)
+        attempts = attempts + 1
+    end
+    return player.PlayerGui ~= nil
+end
+
+-- Create UI safely
 local function createUI()
     print("🎨 Creating UI...")
     
-    -- Check if PlayerGui exists
-    if not player.PlayerGui then
-        print("❌ PlayerGui not found! Waiting...")
-        wait(1)
-        if not player.PlayerGui then
-            print("❌ PlayerGui still not found!")
-            return nil
-        end
+    -- Wait for PlayerGui
+    if not waitForPlayerGui() then
+        print("❌ PlayerGui not found after waiting!")
+        return nil
     end
     
-    -- Check if UI already exists
-    if player.PlayerGui:FindFirstChild("AuraFarmingUI") then
+    -- Check if UI already exists and remove it
+    local existingUI = player.PlayerGui:FindFirstChild("AuraFarmingUI")
+    if existingUI then
         print("⚠️ UI already exists, removing old one...")
-        player.PlayerGui.AuraFarmingUI:Destroy()
+        existingUI:Destroy()
+        wait(0.1) -- Small delay
     end
     
-    -- Main ScreenGui
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "AuraFarmingUI"
-    
-    -- Try to parent safely
+    -- Create ScreenGui safely
+    local screenGui = nil
     local success, errorMsg = pcall(function()
+        screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "AuraFarmingUI"
         screenGui.Parent = player.PlayerGui
     end)
     
-    if not success then
-        print("❌ Failed to create UI: " .. tostring(errorMsg))
+    if not success or not screenGui then
+        print("❌ Failed to create ScreenGui: " .. tostring(errorMsg))
         return nil
     end
     
@@ -561,18 +568,6 @@ end)
 -- Main Initialize Function
 local function initialize()
     print("🚀 Starting Aura Farming System...")
-    
-    -- Wait for PlayerGui to be ready
-    local attempts = 0
-    while not player.PlayerGui and attempts < 50 do
-        wait(0.1)
-        attempts = attempts + 1
-    end
-    
-    if not player.PlayerGui then
-        print("❌ PlayerGui not found after waiting!")
-        return
-    end
     
     -- Create UI first (doesn't need character)
     local uiCreated = createUI()
